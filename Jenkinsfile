@@ -1,65 +1,92 @@
-node{
-    
-    def mavenHome
-    def mavenCMD
-    def docker
-    def dockerCMD
-    def tagName
-    
-    stage('prepare enviroment'){
-        echo 'initialize all the variables'
-        mavenHome = tool name: 'maven' , type: 'maven'
-        mavenCMD = "${mavenHome}/bin/mvn"
-        docker = tool name: 'docker' , type: 'org.jenkinsci.plugins.docker.commons.tools.DockerTool'
-        dockerCMD = "${docker}/bin/docker"
-        tagName="3.0"
+pipeline {
+    agent { label 'javaslave1' }
+
+    tools {
+        maven "maven_3.6.3"
     }
-    
-    stage('git code checkout'){
-        try{
-            echo 'checkout the code from git repository'
-            git 'https://github.com/shubhamkushwah123/star-agile-insurance-project.git'
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerlogin')
+    }
+
+    stages {
+        stage('SCM_Checkout') {
+            steps {
+                echo 'Perform SCM Checkout'
+                git 'https://github.com/Zeehan0133/star-agile-insurance-project.git'
+            }
         }
-        catch(Exception e){
-            echo 'Exception occured in Git Code Checkout Stage'
-            currentBuild.result = "FAILURE"
-            emailext body: '''Dear All,
-            The Jenkins job ${JOB_NAME} has been failed. Request you to please have a look at it immediately by clicking on the below link. 
-            ${BUILD_URL}''', subject: 'Job ${JOB_NAME} ${BUILD_NUMBER} is failed', to: 'shubham@gmail.com'
+
+        stage('Application_Build') {
+            steps {
+                echo 'Perform Maven Build'
+                sh 'mvn -Dmaven.test.failure.ignore=true clean package'
+            }
+            post {
+                failure {
+                    sh "echo 'Send mail on failure'"
+                    mail to: "zyne0133@gmail.com", from: 'zyne0133@gmail.com', subject: "FAILURE: ${currentBuild.fullDisplayName}", body: "Build failed."
+                }
+            }
         }
-    }
-    
-    stage('Build the Application'){
-        echo "Cleaning... Compiling...Testing... Packaging..."
-        //sh 'mvn clean package'
-        sh "${mavenCMD} clean package"        
-    }
-    
-    stage('publish test reports'){
-        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '/var/lib/jenkins/workspace/Capstone-Project-Live-Demo/target/surefire-reports', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: '', useWrapperFileDirectly: true])
-    }
-    
-    stage('Containerize the application'){
-        echo 'Creating Docker image'
-        sh "${dockerCMD} build -t shubhamkushwah123/insure-me:${tagName} ."
-    }
-    
-    stage('Pushing it ot the DockerHub'){
-        echo 'Pushing the docker image to DockerHub'
-        withCredentials([string(credentialsId: 'dock-password', variable: 'dockerHubPassword')]) {
-        sh "${dockerCMD} login -u shubhamkushwah123 -p ${dockerHubPassword}"
-        sh "${dockerCMD} push shubhamkushwah123/insure-me:${tagName}"
-            
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker version'
+                sh "docker build -t zeehan0133/insurance-project:V${BUILD_NUMBER} ."
+                sh 'docker image list'
+                sh "docker tag zeehan0133/insurance-project:V${BUILD_NUMBER} zeehan0133/insurance-project:latest"
+            }
+            post {
+                success {
+                    sh "echo 'Send mail docker Build Success'"
+                    mail to: "zyne0133@gmail.com", from: 'zyne0133@gmail.com', subject: "App Image Created Please validate", body: "App Image Created Please validate - zeehan0133/bankapp-zee-app:V${BUILD_NUMBER}"
+                }
+                failure {
+                    sh "echo 'Send mail docker Build failure'"
+                    mail to: "zyne0133@gmail.com", from: 'zyne0133@gmail.com', subject: "FAILURE: ${currentBuild.fullDisplayName}", body: "Image Build failed."
+                }
+            }
         }
-        
-    stage('Configure and Deploy to the test-server'){
-        ansiblePlaybook become: true, credentialsId: 'ansible-key', disableHostKeyChecking: true, installation: 'ansible', inventory: '/etc/ansible/hosts', playbook: 'ansible-playbook.yml'
-    }
-        
-        
+
+        stage('Approve - push Image to Docker Hub') {
+            steps {
+                //----------------send an approval prompt-------------
+                script {
+                    env.APPROVED_DEPLOY = input message: 'User input required Choose "Yes" | "Abort"'
+                }
+                //-----------------end approval prompt------------
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+
+        stage('Publish to Docker Registry') {
+            steps {
+                sh "docker push zeehan0133/insurance-project:latest"
+            }
+        }
+
+        stage('Approve - Deployment') {
+            steps {
+                //----------------send an approval prompt-------------
+                script {
+                    env.APPROVED_DEPLOY = input message: 'User input required Choose "Yes" | "Abort"'
+                }
+                //-----------------end approval prompt------------
+            }
+        }
+
+        stage('Deploy to ansible target node') {
+            steps {
+                script {
+                    ansiblePlaybook become: true, credentialsId: 'ansible-credential', disableHostKeyChecking: true, installation: 'ansible', inventory: '/etc/ansible/hosts', playbook: 'ansible-playbook.yml'
+                }
+            }
+        }
     }
 }
-
-
-
-
