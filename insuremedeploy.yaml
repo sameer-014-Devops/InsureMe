@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skmirza-insureme-deploy
+  labels:
+    app: skmirza-insureme-deploy-lb01
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: skmirza-insureme-app
+  template:
+    metadata:
+      labels:
+        app: skmirza-insureme-app
+    spec:
+      containers:
+      - name: skmirza-insureme-container
+        image: sameer014/skmirza-insureme-img:latest
+        ports:
+        - containerPort: 8083
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skmirza-insureme-np-service
+  labels:
+    app: skmirza-insureme-np-app
+spec:
+  selector:
+    app: skmirza-insureme-app
+
+  type: NodePort
+  ports:
+  - nodePort: 30016
+    port: 8083
+    targetPort: 8083
