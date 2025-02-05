@@ -9,8 +9,8 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.project.staragile</groupId>
-	<artifactId>insure-me</artifactId>
-	<version>1.0</version> 
+	<artifactId>insureme</artifactId>
+	<version>1.0.1</version> 
 	<name>Insure-me</name>
 	<description>Industry ready project on based on Insurance Domain</description>
 	<properties>
