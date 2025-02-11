@@ -1,8 +1,10 @@
 ---
-  - hosts: buildnodes
+  - hosts: BN01
     gather_facts: no
     become: yes
     tasks:
+      - name: Update Package
+        shell: sudo apt update -y
       - name: Install the required packages
         apt:
           name: "{{ item }}"
@@ -10,6 +12,8 @@
         with_items:
           - openjdk-17-jre
           - git
+          - maven
+          - gradle
 
       - name: Installation of Docker
         shell: 
@@ -28,24 +32,8 @@
       - name: Adding user to docker group
         shell: usermod -aG docker skmirza
       - name: Verify Installations
-        shell: java --version && git --version && docker --version
+        shell: java --version && git --version && docker --version && mvn --version && gradle --version
         register: builds_version
-      - name: Print Java, Git and Docker Version
+      - name: Print Java, Git, Docker, Maven & Gradle Version
         debug:
-          msg: "Java, Git and Docker Version is: {{ builds_version.stdout }}"
-      
-      - name: Install the required packages
-        apt:
-          name: "{{ item }}"
-          state: present
-        with_items:
-          - maven
-          - gradle
-      - name: Verifying Maven and Gradle installation
-        shell: mvn --version && gradle --version
-        register: mvn_gradle_version
-      - name: Print Maven and Gradle Version
-        debug:
-          msg: "Maven and Gradle Version is: {{ mvn_gradle_version.stdout }}"
-        when: inventory_hostname == "MvnB"
-      
+          msg: "Java, Git, Docker, Maven & Gradle Version is: {{ builds_version.stdout }}"
