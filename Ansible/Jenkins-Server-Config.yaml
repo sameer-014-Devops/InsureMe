@@ -4,9 +4,11 @@
    gather_facts: no
    become: yes
    tasks:
+     - name: Update Package
+       shell: sudo apt update -y
      - name: Install Java
        apt:
-         name: openjdk-17-jdk
+         name: openjdk-17-jre
          state: present
      - name: Verify Java installation
        shell: java --version
@@ -22,8 +24,8 @@
           echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]" \
             https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
             /etc/apt/sources.list.d/jenkins.list > /dev/null
-          sudo apt-get update
-          sudo apt-get install jenkins -y
+          sudo apt-get update -y
+          sudo apt-get install -y jenkins
      - name: Verify Jenkins installation
        shell: jenkins --version
        register: jenkins_installation
