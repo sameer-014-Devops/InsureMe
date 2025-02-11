@@ -1,6 +1,6 @@
-NOTE: Make sure add the variables at node levels
+/* NOTE: Make sure add the variables at node levels
 
-#Variable
+Variable:
   App_Name = insureme
   Container_Name = ${User_Name}-${App_Name}-container
   Default_Ver = 1.0.1
@@ -17,7 +17,7 @@ NOTE: Make sure add the variables at node levels
   User_Name = skmirza
 ********************************************************************************************************************************************************************************
 ********************************************************************************************************************************************************************************
-
+*/
 pipeline{
     agent none
     parameters {
