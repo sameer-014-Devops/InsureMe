@@ -261,7 +261,7 @@ pipeline {
             steps{
                 sh """mkdir -p $Prod_Workspace"""
                 sh """cp -R Dockerfile *.yaml target $Prod_Workspace"""
-                echo '**********Copied the Dockerfile, insuremedeploy.yaml, and target files to the Medicure Production workspace**********'
+                echo '**********Copied the Dockerfile, insuremedeploy.yaml, and target files to the InsureMe Production workspace**********'
                 cleanWs()
                 deleteDir()
             }
